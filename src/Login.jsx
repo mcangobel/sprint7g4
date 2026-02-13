@@ -7,9 +7,11 @@ import {
   Container,
   Card,
   CardBody,
-  CardTitle
+  CardTitle,
+  FormFeedback
 } from "reactstrap";
-import {useState} from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
 
 const validateEmail = (email) => {
   return String(email)
@@ -19,34 +21,75 @@ const validateEmail = (email) => {
     );
 };
 
-export default function Login(){
-    const [formData, setFormData] = useState({
-    username: "",
+export default function Login() {
+  const [formData, setFormData] = useState({
+    email: "",
     password: "",
     terms: false
   });
 
-  function handleChange(e) {
-    const { name, value } = e.target;
+  const [errors, setErrors] = useState({
+    email: null,
+    password: null, 
+    terms: null
+  });
 
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const [valid, setValid] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (errors.email === false && errors.password === false && errors.terms === false)
+    {
+      setValid(true);
+    }
+    else {
+      setValid(false);
+    }
+  }, [errors])
+
+  function handleChange(e) {
+    const { name, value, checked } = e.target;
+
+    if (name == 'terms') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: checked
+      }));
+    }
+    else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+
+    if (name == 'email'){
+      if (!validateEmail(value))
+        setErrors({...errors, email: true})
+      else 
+        setErrors({...errors, email: false})
+    }
+    else if (name == 'password'){
+      if (value.length < 5)
+        setErrors({...errors, password: true})
+      else
+        setErrors({...errors, password: false})
+    }
+    else if (name == 'terms'){
+      if (checked == false)
+        setErrors({...errors, terms: true})
+      else
+        setErrors({...errors, terms: false})
+    }
   }
 
   function handleSubmit(e) {
     e.preventDefault();
-
-    console.log("Gönderilen veri:", formData);
-
-    // basit kontrol
-    if (!formData.username || !formData.password) {
-      alert("Tüm alanları doldurun");
+    if (!valid)
       return;
-    }
 
-    alert("Giriş başarılı (örnek)");
+    navigate('succes');
+
   }
 
   return (
@@ -59,15 +102,19 @@ export default function Login(){
 
           <Form onSubmit={handleSubmit}>
             <FormGroup>
-              <Label for="username">Kullanıcı Adı</Label>
+              <Label for="email">Email</Label>
               <Input
-                id="username"
-                name="username"
+                id="email"
+                name="email"
                 type="text"
-                placeholder="Kullanıcı adınızı girin"
-                value={formData.username}
+                placeholder="Email giriniz"
+                value={formData.email}
                 onChange={handleChange}
+                invalid={errors.email} 
               />
+              <FormFeedback>
+                Doğru bir email girin.
+              </FormFeedback>
             </FormGroup>
 
             <FormGroup>
@@ -79,7 +126,11 @@ export default function Login(){
                 placeholder="Şifrenizi girin"
                 value={formData.password}
                 onChange={handleChange}
+                invalid={errors.password}
               />
+              <FormFeedback>
+                Password 5 karakterden büyük olmalı
+              </FormFeedback>
             </FormGroup>
 
             <FormGroup>
@@ -89,11 +140,15 @@ export default function Login(){
                 type="checkbox"
                 value={formData.terms}
                 onChange={handleChange}
+                invalid={errors.terms}
               />
               <Label for="terms">I agree.</Label>
+              <FormFeedback>
+                Şartlar kabul edilmeli.
+              </FormFeedback>
             </FormGroup>
 
-            <Button color="primary" block>
+            <Button disabled={!valid} color="primary" block>
               Giriş Yap
             </Button>
           </Form>
